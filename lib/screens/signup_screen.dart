@@ -4,7 +4,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/editorial_input.dart';
 import '../widgets/date_picker_field.dart';
 import '../widgets/gradient_button.dart';
-import '../services/auth_service.dart';
+import '../auth/services/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -53,11 +53,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     try {
-      await AuthService.register(
+      final isoDate = _toIsoDate(_dataController.text);
+      if (isoDate == null) {
+        setState(() => _errorMessage = 'Data de nascimento inválida.');
+        return;
+      }
+
+      await AuthService.instance.register(
         nome: _nomeController.text.trim(),
         email: _emailController.text.trim(),
         senha: _senhaController.text,
-        dataNascimento: _toIsoDate(_dataController.text),
+        dataNascimento: isoDate,
       );
 
       if (!mounted) return;
@@ -316,13 +322,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const SizedBox(height: 16),
 
               Center(
-                child: RichText(
-                  text: TextSpan(
-                    style: AppTextStyles.body,
-                    text: 'Já possui uma conta? ',
-                    children: [
-                      TextSpan(text: 'Entrar', style: AppTextStyles.link),
-                    ],
+                child: GestureDetector(
+                  onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+                  child: RichText(
+                    text: TextSpan(
+                      style: AppTextStyles.body,
+                      text: 'Já possui uma conta? ',
+                      children: [
+                        TextSpan(text: 'Entrar', style: AppTextStyles.link),
+                      ],
+                    ),
                   ),
                 ),
               ),
