@@ -5,19 +5,18 @@ import 'theme/app_colors.dart';
 import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/forgot_password_screen.dart';
+import 'screens/reset_password_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
  
-  // ✅ Inicializa o cliente HTTP com o interceptor de autenticação
   ApiClient.init(
     navigatorKey: navigatorKey,
     baseUrl: 'http://localhost:3000',
   );
  
-  // Verifica se já existe sessão salva para definir a rota inicial
   final hasSession = await TokenStorage.instance.hasTokens();
  
   runApp(MyApp(initialRoute: hasSession ? '/home' : '/login'));
@@ -32,7 +31,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'DoaUTF',
       debugShowCheckedModeBanner: false,
-      navigatorKey: navigatorKey, // ← essencial para o logout forçado
+      navigatorKey: navigatorKey,
       initialRoute: initialRoute,
       routes: {
         '/login':           (_) => const LoginScreen(),
@@ -40,11 +39,26 @@ class MyApp extends StatelessWidget {
         '/home':            (_) => const HomeScreen(),
         '/register':        (_) => const SignUpScreen(),
       },
+      onGenerateRoute: (RouteSettings settings) {
+        if (settings.name?.startsWith('/reset-password') ?? false) {
+          final uri = Uri.parse(settings.name ?? '');
+          final token = uri.queryParameters['token'];
+          
+          if (token != null && token.isNotEmpty) {
+            return MaterialPageRoute(
+              builder: (context) => ResetPasswordScreen(token: token),
+              settings: settings,
+            );
+          }
+        }
+        
+        return null;
+      },
     );
   }
 }
  
-// Placeholder — substitua pela sua HomeScreen real
+// Próxima Sprint: substituir pela HomeScreen real
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
  
