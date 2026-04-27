@@ -49,14 +49,66 @@ class AuthService {
     required String senha,
     required String dataNascimento,
   }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/auth/register',
+        data: {
+          'nome': nome,
+          'email': email,
+          'senha': senha,
+          'data_nascimento': dataNascimento,
+        },
+      );
+
+      final data = response.data ?? {};
+
+      if (data['requireVerification'] == true) return true;
+
+      if (data.containsKey('access_token')) {
+        final tokens = AuthTokens.fromJson(data);
+        await TokenStorage.instance.saveTokens(
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+        );
+      }
+
+      return false;
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data is Map<String, dynamic>) {
+        final serverError = e.response?.data['erro'];
+        if (serverError != null) {
+          throw Exception(serverError); 
+        }
+      }
+      throw Exception('Não foi possível conectar ao servidor. Tente novamente.');
+    } catch (e) {
+      throw Exception('Ocorreu um erro inesperado.');
+    }
+  }
+
+  Future<void> verifyEmail({
+    required String email,
+    required String codigo,
+  }) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/auth/register',
-      data: {
-        'nome': nome,
-        'email': email,
-        'senha': senha,
-        'data_nascimento': dataNascimento,
-      },
+      '/auth/verify-email',
+      data: {'email': email, 'codigo': codigo},
+    );
+
+    final data = response.data ?? {};
+    if (data.containsKey('access_token')) {
+      final tokens = AuthTokens.fromJson(data);
+      await TokenStorage.instance.saveTokens(
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      );
+    }
+  }
+
+  Future<void> resendVerificationCode({required String email}) async {
+    await _dio.post<void>(
+      '/auth/resend-verification',
+      data: {'email': email},
     );
 
     final data = response.data ?? {};
