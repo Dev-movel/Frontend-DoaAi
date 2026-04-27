@@ -63,21 +63,47 @@ class AuthService {
     }
   }
 
-  Future<void> register({
+  Future<bool> register({
     required String nome,
     required String email,
     required String senha,
     required String dataNascimento,
   }) async {
-    await _dio.post<void>(
-      '/auth/register',
-      data: {
-        'nome': nome,
-        'email': email,
-        'senha': senha,
-        'dataNascimento': dataNascimento,
-      },
-    );
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/auth/register',
+        data: {
+          'nome': nome,
+          'email': email,
+          'senha': senha,
+          'data_nascimento': dataNascimento,
+        },
+      );
+
+      final data = response.data ?? {};
+
+      if (data['requireVerification'] == true) return true;
+
+      if (data.containsKey('access_token')) {
+        final tokens = AuthTokens.fromJson(data);
+        await TokenStorage.instance.saveTokens(
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+        );
+      }
+
+      return false;
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data is Map<String, dynamic>) {
+        final serverError = e.response?.data['erro'];
+        if (serverError != null) {
+          throw Exception(serverError); 
+        }
+      }
+      throw Exception('Não foi possível conectar ao servidor. Tente novamente.');
+    } catch (e) {
+      throw Exception('Ocorreu um erro inesperado.');
+    }
   }
 
   Future<bool> refreshToken() async {
