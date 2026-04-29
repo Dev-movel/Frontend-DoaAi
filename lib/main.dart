@@ -7,6 +7,7 @@ import 'screens/login_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/reset_password_screen.dart';
 import 'screens/verify_email_screen.dart';
+import 'screens/admin_dashboard.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
         '/forgot-password': (_) => const ForgotPasswordScreen(),
         '/home':            (_) => const HomeScreen(),
         '/register':        (_) => const SignUpScreen(),
+        '/admin': (context) => const AdminDashboardScreen(),
       },
       onGenerateRoute: (RouteSettings settings) {
         if (settings.name == '/verify-email') {
